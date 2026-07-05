@@ -1,4 +1,5 @@
 const express = require('express')
+const cors =require('cors')
 const authRoutes = require('./route/auth.route')
 const offresRoutes = require('./route/offres.routes');
 const swaggerUi = require('swagger-ui-express');
@@ -10,6 +11,7 @@ const multer = require('multer');
 const candidaturesRoutes = require('./route/candidatures.routes');
 const statsRoutes = require('./route/stats.routes');
 const app = express()
+app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
 

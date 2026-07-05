@@ -60,6 +60,72 @@ class AuthService {
       email: admin.email
     };
   }
+
+  // À ajouter dans la classe AuthService existante
+
+  async getProfile(adminId) {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+      select: { id: true, nom: true, email: true, createdAt: true }
+    });
+
+    if (!admin) {
+      throw { status: 404, message: "Admin non trouvé" };
+    }
+
+    return admin;
+  }
+
+  async updateProfile(adminId, data) {
+    const { nom, email } = data;
+
+    if (!nom || !email) {
+      throw { status: 400, message: "Nom et email sont requis" };
+    }
+
+    // Vérifie que l'email n'est pas déjà utilisé par un autre admin
+    const existingAdmin = await prisma.admin.findUnique({ where: { email } });
+    if (existingAdmin && existingAdmin.id !== adminId) {
+      throw { status: 409, message: "Cet email est déjà utilisé" };
+    }
+
+    const admin = await prisma.admin.update({
+      where: { id: adminId },
+      data: { nom, email },
+      select: { id: true, nom: true, email: true }
+    });
+
+    return admin;
+  }
+
+  async changePassword(adminId, currentPassword, newPassword) {
+    if (!currentPassword || !newPassword) {
+      throw { status: 400, message: "Mot de passe actuel et nouveau mot de passe requis" };
+    }
+
+    if (newPassword.length < 6) {
+      throw { status: 400, message: "Le nouveau mot de passe doit contenir au moins 6 caractères" };
+    }
+
+    const admin = await prisma.admin.findUnique({ where: { id: adminId } });
+    if (!admin) {
+      throw { status: 404, message: "Admin non trouvé" };
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+    if (!isPasswordValid) {
+      throw { status: 401, message: "Mot de passe actuel incorrect" };
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.admin.update({
+      where: { id: adminId },
+      data: { password: hashedPassword }
+    });
+
+    return { message: "Mot de passe modifié avec succès" };
+  }
 }
 
 module.exports = new AuthService();

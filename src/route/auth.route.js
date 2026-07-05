@@ -83,4 +83,75 @@ router.post('/login', authController.login);
  */
 router.post('/register', authController.register); // à désactiver/protéger après création du 1er admin
 
+const { verifyAdmin } = require('../middleware/auth.middleware');
+
+/**
+ * @swagger
+ * /auth/profile:
+ *   get:
+ *     summary: Récupère le profil de l'admin connecté
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profil récupéré avec succès
+ */
+router.get('/profile', verifyAdmin, authController.getProfile);
+
+/**
+ * @swagger
+ * /auth/profile:
+ *   put:
+ *     summary: Met à jour le profil de l'admin connecté
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nom, email]
+ *             properties:
+ *               nom:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour
+ *       409:
+ *         description: Email déjà utilisé
+ */
+router.put('/profile', verifyAdmin, authController.updateProfile);
+
+/**
+ * @swagger
+ * /auth/password:
+ *   put:
+ *     summary: Change le mot de passe de l'admin connecté
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Mot de passe modifié avec succès
+ *       401:
+ *         description: Mot de passe actuel incorrect
+ */
+router.put('/password', verifyAdmin, authController.changePassword);
 module.exports = router;
