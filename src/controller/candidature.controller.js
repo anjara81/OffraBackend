@@ -1,12 +1,9 @@
-const candidatService = require('../service/candidat.service');
-
-const multer = require('multer');
-
+const candidatureService = require('../service/candidature.service');
 
 exports.getAll = async (req, res) => {
   try {
-    const candidats = await candidatService.getAll();
-    res.status(200).json(candidats);
+    const candidatures = await candidatureService.getAll(req.query);
+    res.status(200).json(candidatures);
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json({ message: error.message || "Erreur serveur" });
@@ -15,8 +12,8 @@ exports.getAll = async (req, res) => {
 
 exports.getById = async (req, res) => {
   try {
-    const candidat = await candidatService.getById(req.params.id);
-    res.status(200).json(candidat);
+    const candidature = await candidatureService.getById(req.params.id);
+    res.status(200).json(candidature);
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json({ message: error.message || "Erreur serveur" });
@@ -25,18 +22,18 @@ exports.getById = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const candidat = await candidatService.create(req.body);
-    res.status(201).json({ message: "Candidat créé avec succès", candidat });
+    const candidature = await candidatureService.create(req.body, req.file);
+    res.status(201).json({ message: "Candidature envoyée avec succès", candidature });
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json({ message: error.message || "Erreur serveur" });
   }
 };
 
-exports.update = async (req, res) => {
+exports.updateStatut = async (req, res) => {
   try {
-    const candidat = await candidatService.update(req.params.id, req.body);
-    res.status(200).json({ message: "Candidat mis à jour avec succès", candidat });
+    const candidature = await candidatureService.updateStatut(req.params.id, req.body.statut);
+    res.status(200).json({ message: "Statut mis à jour avec succès", candidature });
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json({ message: error.message || "Erreur serveur" });
@@ -45,11 +42,10 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
-    const result = await candidatService.delete(req.params.id);
+    const result = await candidatureService.delete(req.params.id);
     res.status(200).json(result);
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json({ message: error.message || "Erreur serveur" });
   }
 };
-

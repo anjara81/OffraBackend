@@ -18,10 +18,10 @@ const authController = require('../controller/auth.controller');
  *             properties:
  *               email:
  *                 type: string
- *                 example: admin@ofra.com
+ *                 example: anjara@gmail.com
  *               password:
  *                 type: string
- *                 example: MotDePasse123
+ *                 example: 1234
  *     responses:
  *       200:
  *         description: Connexion réussie, retourne le token JWT
@@ -66,13 +66,13 @@ router.post('/login', authController.login);
  *             properties:
  *               nom:
  *                 type: string
- *                 example: Admin Ofra
+ *                 example: anjara Tiana
  *               email:
  *                 type: string
- *                 example: admin@ofra.com
+ *                 example: anjara@gmail.com
  *               password:
  *                 type: string
- *                 example: MotDePasse123
+ *                 example: 1234
  *     responses:
  *       201:
  *         description: Admin créé avec succès
