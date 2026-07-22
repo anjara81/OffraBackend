@@ -61,20 +61,20 @@ model Candidat {
   candidatures Candidature[]
 }
 
-// CANDIDATURE 
 model Candidature {
-  id                Int              @id @default(autoincrement())
-  offreId           Int
-  candidatId        Int
-  cvPath            String           // chemin du fichier CV uploadé
-  lettreMotivation  String?          // texte ou chemin fichier
-  statut            StatutCandidature @default(EN_ATTENTE)
-  dateCandidature   DateTime         @default(now())
+  id                    Int               @id @default(autoincrement())
+  offreId               Int
+  candidatId            Int
+  cvPath                String
+  lettreMotivation      String?           // texte libre (optionnel)
+  lettreMotivationPath  String?           // fichier PDF (optionnel)
+  statut                StatutCandidature @default(EN_ATTENTE)
+  dateCandidature       DateTime          @default(now())
 
-  offre             Offre            @relation(fields: [offreId], references: [id], onDelete: Cascade)
-  candidat          Candidat         @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  offre                 Offre             @relation(fields: [offreId], references: [id], onDelete: Cascade)
+  candidat               Candidat         @relation(fields: [candidatId], references: [id], onDelete: Cascade)
 
-  @@unique([offreId, candidatId]) // empêche un candidat de postuler 2x à la même offre
+  @@unique([offreId, candidatId])
 }
 
 enum StatutCandidature {

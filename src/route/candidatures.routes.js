@@ -89,7 +89,10 @@ router.get('/:id', verifyAdmin, candidatureController.getById);
  *       409:
  *         description: Déjà postulé à cette offre
  */
-router.post('/', upload.single('cv'), candidatureController.create);
+router.post('/', upload.fields([
+  { name: 'cv', maxCount: 1 },
+  { name: 'lettreMotivation', maxCount: 1 }
+]), candidatureController.create);
 
 /**
  * @swagger

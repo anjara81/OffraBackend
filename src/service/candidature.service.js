@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
+const { isValidEmail, isValidPhone } = require('../utils/validators');
 const prisma = new PrismaClient();
 
 class CandidatureService {
@@ -39,63 +40,71 @@ class CandidatureService {
   }
 
   // Créer une candidature (candidat postule à une offre)
-  async create(data, file) {
+  async create(data, files) {
     const { offreId, nom, prenom, email, telephone, lettreMotivation } = data;
+    const cvFile = files?.cv?.[0];
+    const lettreFile = files?.lettreMotivation?.[0];
 
-    if (!file) {
+    if (!cvFile) {
+      if (lettreFile) this._deleteFile(lettreFile.path);
       throw { status: 400, message: "Le CV est requis" };
     }
 
     if (!offreId || !nom || !prenom || !email) {
-      // On supprime le fichier déjà uploadé si la validation échoue
-      this._deleteFile(file.path);
+      this._deleteFile(cvFile.path);
+      if (lettreFile) this._deleteFile(lettreFile.path);
       throw { status: 400, message: "offreId, nom, prenom et email sont requis" };
     }
 
-    // Vérifie que l'offre existe et est active
+    if (!isValidEmail(email)) {
+      this._deleteFile(cvFile.path);
+      if (lettreFile) this._deleteFile(lettreFile.path);
+      throw { status: 400, message: "Adresse email invalide" };
+    }
+
+    if (!isValidPhone(telephone)) {
+      this._deleteFile(cvFile.path);
+      if (lettreFile) this._deleteFile(lettreFile.path);
+      throw { status: 400, message: "Le téléphone doit contenir exactement 10 chiffres" };
+    }
+
     const offre = await prisma.offre.findUnique({ where: { id: Number(offreId) } });
     if (!offre) {
-      this._deleteFile(file.path);
+      this._deleteFile(cvFile.path);
+      if (lettreFile) this._deleteFile(lettreFile.path);
       throw { status: 404, message: "Offre non trouvée" };
     }
     if (offre.statut !== 'ACTIVE') {
-      this._deleteFile(file.path);
+      this._deleteFile(cvFile.path);
+      if (lettreFile) this._deleteFile(lettreFile.path);
       throw { status: 400, message: "Cette offre n'accepte plus de candidatures" };
     }
 
-    // Récupère le candidat existant par email, ou le crée
     let candidat = await prisma.candidat.findUnique({ where: { email } });
-
     if (!candidat) {
-      candidat = await prisma.candidat.create({
-        data: { nom, prenom, email, telephone }
-      });
+      candidat = await prisma.candidat.create({ data: { nom, prenom, email, telephone } });
     }
 
-    // Vérifie qu'il n'a pas déjà postulé à cette offre
     const existingCandidature = await prisma.candidature.findUnique({
-      where: {
-        offreId_candidatId: {
-          offreId: Number(offreId),
-          candidatId: candidat.id
-        }
-      }
+      where: { offreId_candidatId: { offreId: Number(offreId), candidatId: candidat.id } }
     });
 
     if (existingCandidature) {
-      this._deleteFile(file.path);
+      this._deleteFile(cvFile.path);
+      if (lettreFile) this._deleteFile(lettreFile.path);
       throw { status: 409, message: "Vous avez déjà postulé à cette offre" };
     }
 
-    // Chemin relatif stocké en DB (pas le chemin absolu du système)
-    const cvPath = `/uploads/cv/${file.filename}`;
+    const cvPath = `/uploads/cv/${cvFile.filename}`;
+    const lettreMotivationPath = lettreFile ? `/uploads/lettres/${lettreFile.filename}` : null;
 
     const candidature = await prisma.candidature.create({
       data: {
         offreId: Number(offreId),
         candidatId: candidat.id,
         cvPath,
-        lettreMotivation: lettreMotivation || null
+        lettreMotivation: lettreFile ? null : (lettreMotivation || null),
+        lettreMotivationPath
       },
       include: { offre: true, candidat: true }
     });
@@ -124,11 +133,15 @@ class CandidatureService {
   async delete(id) {
     const candidature = await this.getById(id);
 
-    const filePath = path.join(__dirname, '..', candidature.cvPath);
-    this._deleteFile(filePath);
+    const cvFilePath = path.join(__dirname, '..', candidature.cvPath);
+    this._deleteFile(cvFilePath);
+
+    if (candidature.lettreMotivationPath) {
+      const lettreFilePath = path.join(__dirname, '..', candidature.lettreMotivationPath);
+      this._deleteFile(lettreFilePath);
+    }
 
     await prisma.candidature.delete({ where: { id: Number(id) } });
-
     return { message: "Candidature supprimée avec succès" };
   }
 

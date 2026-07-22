@@ -29,14 +29,17 @@ class CandidatService {
   async create(data) {
     const { nom, prenom, email, telephone } = data;
 
-    if (!nom || !prenom || !email) {
-      throw { status: 400, message: "Nom, prénom et email sont requis" };
-    }
+  if (!nom || !prenom || !email) {
+    throw { status: 400, message: "Nom, prénom et email sont requis" };
+  }
 
-    const existingCandidat = await prisma.candidat.findUnique({ where: { email } });
-    if (existingCandidat) {
-      throw { status: 409, message: "Un candidat avec cet email existe déjà" };
-    }
+  if (!isValidEmail(email)) {
+    throw { status: 400, message: "Adresse email invalide" };
+  }
+
+  if (!isValidPhone(telephone)) {
+    throw { status: 400, message: "Le téléphone doit contenir exactement 10 chiffres" };
+  }
 
     return await prisma.candidat.create({
       data: { nom, prenom, email, telephone }
@@ -48,6 +51,14 @@ class CandidatService {
     await this.getById(id); // vérifie qu'il existe
 
     const { nom, prenom, email, telephone } = data;
+
+    if (email && !isValidEmail(email)) {
+    throw { status: 400, message: "Adresse email invalide" };
+  }
+
+  if (telephone && !isValidPhone(telephone)) {
+    throw { status: 400, message: "Le téléphone doit contenir exactement 10 chiffres" };
+  }
 
     return await prisma.candidat.update({
       where: { id: Number(id) },

@@ -76,14 +76,14 @@ class StatsService {
 
       // Candidatures groupées par mois (12 derniers mois) - requête brute car Prisma groupBy ne gère pas les dates tronquées
       prisma.$queryRaw`
-        SELECT 
-          TO_CHAR("dateCandidature", 'YYYY-MM') AS mois,
-          COUNT(*)::int AS total
-        FROM "Candidature"
-        WHERE "dateCandidature" >= NOW() - INTERVAL '12 months'
-        GROUP BY mois
-        ORDER BY mois ASC
-      `,
+  SELECT 
+    TO_CHAR("dateCandidature", 'YYYY-MM') AS mois,
+    COUNT(*)::int AS total
+  FROM "Candidature"
+  WHERE "dateCandidature" >= NOW() - INTERVAL '6 months'
+  GROUP BY mois
+  ORDER BY mois ASC
+`,
 
       // Répartition des offres par type de contrat
       prisma.offre.groupBy({
@@ -118,6 +118,20 @@ class StatsService {
       ? (totalCandidatures / totalOffres).toFixed(2)
       : "0.00";
 
+    const fillMissingMonths = (data) => {
+      const months = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        months.push(key);
+      }
+
+      return months.map((mois) => {
+        const found = data.find((d) => d.mois === mois);
+        return { mois, total: found ? found.total : 0 };
+      });
+    };
     return {
       resume: {
         totalOffres,
@@ -135,10 +149,9 @@ class StatsService {
       candidatures: {
         parStatut: formatGroupBy(candidaturesParStatut, 'statut'),
         recentes: candidaturesRecentes,
-        parMois: candidaturesParMois.map(row => ({
-          mois: row.mois,
-          total: row.total
-        }))
+        parMois: fillMissingMonths(
+          candidaturesParMois.map(row => ({ mois: row.mois, total: row.total }))
+        )
       },
       topOffres: topOffres.map(o => ({
         id: o.id,

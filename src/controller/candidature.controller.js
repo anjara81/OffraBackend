@@ -22,7 +22,7 @@ exports.getById = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const candidature = await candidatureService.create(req.body, req.file);
+    const candidature = await candidatureService.create(req.body, req.files);
     res.status(201).json({ message: "Candidature envoyée avec succès", candidature });
   } catch (error) {
     const status = error.status || 500;
